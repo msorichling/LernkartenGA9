@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vokabel-Trainer: Unit 1</title>
+    
+    <!-- Google Font für handschriftliche Überschrift -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&display=swap" rel="stylesheet">
+
+    <style>
+        /* Modernes Blaues Styling (Unit 1 Theme) */
+        :root {
+            --color-primary: #1e88e5; /* Helles Blau */
+            --color-secondary: #0d47a1; /* Dunkles Blau */
+            --color-background: #e3f2fd; /* Sehr helles Blau */
+            --color-text: #263238; /* Dunkelgrau */
+            --color-success: #43a047; /* Grün für Korrekt */
+            --color-error: #e53935; /* Rot für Fehler */
+            --color-card-front: #42a5f5; /* Kartenfarbe Vorderseite */
+            --color-card-back: #26c6da; /* Kartenfarbe Rückseite */
+            --shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+        
+        body {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--color-background) 0%, var(--color-primary) 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .game-container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: var(--shadow);
+            max-width: 550px;
+            width: 95%;
+            text-align: center;
+            margin-top: 5vh;
+        }
+
+        /* HANDSCHRIFTLICHE ÜBERSCHRIFT */
+        .game-title, .menu-title {
+            font-family: 'Caveat', cursive;
+            font-size: 36px;
+            font-weight: 600;
+            color: var(--color-secondary);
+            margin-bottom: 20px;
+            text-align: center; 
+        }
+        
+        /* STARTBILDSCHIRM STYLING */
+        #menu-screen {
+            padding: 30px;
+            max-width: 600px;
+            width: 95%;
+            margin-top: 10vh;
+            background: white; 
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+        }
+
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+        }
+
+        .menu-button {
+            width: 100%;
+            background-color: var(--color-background);
+            color: var(--color-secondary);
+            border: 2px solid var(--color-primary);
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .menu-button:hover {
+            background-color: var(--color-primary);
+            color: white;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        /* Fortschrittsanzeige */
+        #progressText {
+            font-weight: 500;
+            color: var(--color-text);
+            margin-bottom: 5px;
+        }
+        
+        #attemptCount {
+            font-weight: bold;
+            color: var(--color-error);
+            margin-bottom: 15px;
+            min-height: 1.2em;
+        }
+
+        /* 3D-Karten-Container */
+        .card-container {
+            perspective: 1000px;
+            margin-bottom: 30px;
+        }
+
+        .flashcard {
+            width: 100%;
+            height: 220px;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            cursor: default; /* Geändert auf default, wird bei Erfolg auf pointer gesetzt */
+        }
+
+        .flashcard.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 600;
+            text-align: center;
+            padding: 25px;
+            box-sizing: border-box;
+            color: white;
+            line-height: 1.4;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        /* Kartenfarben */
+        .card-front {
+            background: linear-gradient(135deg, var(--color-card-front), #1565c0);
+        }
+
+        .card-back {
+            background: linear-gradient(135deg, var(--color-card-back), #00838f);
+            transform: rotateY(180deg);
+        }
+        
+        /* Eingabe und Feedback */
+        .answer-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            text-align: center;
+            margin-bottom: 15px;
+            transition: border-color 0.3s;
+        }
+
+        .answer-input:focus {
+            outline: none;
+            border-color: var(--color-primary);
+        }
+
+        .answer-input.correct {
+            border-color: var(--color-success);
+            background-color: #f1f8e9;
+        }
+
+        .answer-input.incorrect {
+            border-color: var(--color-error);
+            background-color: #ffebee;
+        }
+
+        .feedback {
+            margin: 15px 0;
+            font-weight: 600;
+            min-height: 20px;
+        }
+
+        .feedback.correct { color: var(--color-success); }
+        .feedback.incorrect { color: var(--color-error); }
+
+        /* Buttons (Spiel) */
+        .button {
+            background-color: var(--color-primary);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin: 0 5px 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .button:hover:not(:disabled) {
+            background-color: var(--color-secondary);
+            transform: translateY(-2px);
+        }
+
+        .button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .button.next-button {
+            background-color: var(--color-success);
+        }
+        .button.next-button:hover:not(:disabled) {
+            background-color: #388e3c;
+        }
+
+        .button.back-button {
+            background-color: #9e9e9e; /* Grau */
+        }
+        .button.back-button:hover:not(:disabled) {
+            background-color: #757575;
+        }
+        
+        /* Abschlussmeldung */
+        .completion-message {
+            background: linear-gradient(45deg, #ffb300, #ff8f00); 
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            margin-top: 20px;
+            box-shadow: var(--shadow);
+            display: none;
+        }
+        
+        .completion-message.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    
+    <!-- STARTBILDSCHIRM (Wird zuerst angezeigt) -->
+    <section id="menu-screen">
+        <h1 class="menu-title">Unit 1: Vokabel-Trainer</h1>
+        <div class="menu-grid" id="menuGrid">
+            <!-- Buttons werden hier von JavaScript eingefügt -->
+        </div>
+    </section>
+
+    <!-- SPIEL-BEREICH (Ist standardmäßig versteckt) -->
+    <main class="game-container" id="gameContainer" style="display: none;">
+        <header>
+            <h1 class="game-title" id="gameTitle"></h1>
+        </header>
+        
+        <p id="attemptCount"></p>
+
+        <section class="card-container">
+            <div class="flashcard" id="flashcard">
+                <div class="card-face card-front" id="cardFront"></div>
+                <div class="card-face card-back" id="cardBack"></div>
+            </div>
+        </section>
+
+        <p id="progressText"></p>
+
+        <section class="input-section">
+            <input type="text" class="answer-input" id="answerInput" placeholder="Englische Antwort eingeben..." disabled>
+            <div class="feedback" id="feedback"></div>
+            
+            <button class="button" id="checkButton" onclick="checkAnswer()" disabled>Antwort prüfen</button>
+            <button class="button next-button" id="nextButton" onclick="nextCard()" style="display: none;">Nächste Karte</button>
+            <button class="button back-button" id="menuButton" onclick="backToMenu()">Zurück zum Menü</button>
+        </section>
+
+        <div class="completion-message" id="completionMessage">
+            <h3>Glückwunsch! 🎉</h3>
+            <p>Du hast alle Karten erfolgreich durchgearbeitet.</p>
+            <button class="button" onclick="restartGame()">Nochmal spielen</button>
+            <button class="button back-button" onclick="backToMenu()">Zurück zum Menü</button>
+        </div>
+    </main>
+
+    <script>
+        // #######################################################
+        // 1. LERNKARTEN-DATEN (Unit 1, aufgeteilt nach Seiten)
+        // #######################################################
+        const allCardSets = {
+            "Seite 147": {
+                title: "Seite 147",
+                cards: [
+                    { front: 'erforschen, erkunden', back: '(to) explore' },
+                    { front: 'Papagei', back: 'parrot' },
+                    { front: 'Känguru', back: 'kangaroo' },
+                    { front: 'Krokodil', back: 'crocodile' },
+                    { front: 'Beutelteufel (Tierart)', back: 'Tasmanian devil' },
+                    { front: 'Kamel', back: 'camel' },
+                    { front: 'das Hinterland Australiens', back: 'the outback' },
+                    { front: 'beißen; stechen', back: '(to) bite' },
+                    { front: 'Insektenschutzmittel', back: 'insect repellent' },
+                    { front: 'Kontinent', back: 'continent' },
+                    { front: 'Sträfling', back: 'convict' },
+                    { front: 'Sporttauchen', back: 'scuba-diving' },
+                    { front: 'Schnorcheln', back: 'snorkelling' },
+                    { front: 'Koralle/n', back: 'coral' },
+                    { front: '(Zeugen-)Aussage; Beweis (für)', back: 'testimony (to)' }
+                ]
+            },
+            "Seite 148": {
+                title: "Seite 148",
+                cards: [
+                    { front: 'erkennen; (sich) identifizieren', back: '(to) identify' },
+                    { front: 'Aborigine- (die Ureinwohner/innen Australiens)', back: 'Aboriginal' },
+                    { front: 'Volk', back: 'people' },
+                    { front: 'träumen (von etwas)', back: '(to) dream (of/about sth.)' },
+                    { front: 'Pflanze', back: 'plant' },
+                    { front: 'etwas weitergeben (an jn.)', back: '(to) pass sth. on (to sb.)' },
+                    { front: 'Gegenwart', back: 'present' },
+                    { front: 'Mit-', back: 'fellow' },
+                    { front: '(sich) integrieren', back: '(to) integrate' },
+                    { front: 'Gemeinschaft, Gemeinde', back: 'community' },
+                    { front: 'jd. aufziehen, großziehen', back: '(to) bring sb. up' },
+                    { front: 'Generation', back: 'generation' },
+                    { front: 'sich (bei jm. für etwas) entschuldigen', back: '(to) apologize (to sb. for sth.)' },
+                    { front: 'leiden (an)', back: '(to) suffer (from)' },
+                    { front: 'Schmerz; Kränkung', back: 'hurt' }
+                ]
+            },
+            "Seite 149": {
+                title: "Seite 149",
+                cards: [
+                    { front: 'Sozialhilfe; Wohlfahrt', back: 'welfare' },
+                    { front: 'trennen', back: '(to) separate' },
+                    { front: 'Kinderzimmer; Kinderkrippe', back: 'nursery' },
+                    { front: 'mit etwas aufhören', back: '(to) cut sth. out' },
+                    { front: 'Lebenserwartung', back: 'life expectancy' },
+                    { front: 'Arbeitslosigkeit', back: 'unemployment' },
+                    { front: 'Leinwand; Segeltuch', back: 'canvas' },
+                    { front: 'Baumrinde', back: '(tree) bark' },
+                    { front: 'damals', back: '(back) then' },
+                    { front: 'ermutigen, ermuntern', back: '(to) encourage' },
+                    { front: 'dauerhaft', back: 'permanent' },
+                    { front: 'Punkt, Pünktchen', back: 'dot' },
+                    { front: 'hell, freundlich', back: 'bright' },
+                    { front: 'im Gange sein', back: '(to) be in progress' }
+                ]
+            },
+            "Seite 150": {
+                title: "Seite 150",
+                cards: [
+                    { front: 'regelmäßig; gewohnt', back: 'regular' },
+                    { front: 'volljährig werden', back: '(to) come of age' },
+                    { front: 'konfirmieren; firmen', back: '(to) confirm' },
+                    { front: 'jüdisch', back: 'Jewish' },
+                    { front: 'Muslim/Muslima', back: 'Muslim' },
+                    { front: 'Feier, Zeremonie', back: 'ceremony' },
+                    { front: 'Disziplin', back: 'discipline' },
+                    { front: 'zurückkehren, zurückkommen', back: '(to) return' },
+                    { front: 'Gift', back: 'venom' },
+                    { front: 'Geschöpf, (Lebe-)Wesen', back: 'creature' },
+                    { front: 'Schnecke', back: 'snail' },
+                    { front: '(Hinter-)Hof; Garten hinter dem Haus', back: 'backyard (AE)' },
+                    { front: 'Anti-, Gegen-', back: 'anti-' },
+                    { front: 'Qualle', back: 'jellyfish' },
+                    { front: '(Insekten-)Stich', back: 'sting' }
+                ]
+            },
+            "Seite 151": {
+                title: "Seite 151",
+                cards: [
+                    { front: 'Essig', back: 'vinegar' },
+                    { front: 'Oktopus, Tintenfisch', back: 'octopus' },
+                    { front: 'Lähmung', back: 'paralysis' },
+                    { front: 'Zecke', back: 'tick' },
+                    { front: 'oval', back: 'oval' },
+                    { front: 'saugen', back: '(to) suck' },
+                    { front: 'Pinzette', back: 'tweezers (pl)' },
+                    { front: 'Freundlichkeit', back: 'friendliness' },
+                    { front: 'informell, locker', back: 'informal' },
+                    { front: '(ver)kürzen', back: '(to) shorten' },
+                    { front: 'Freund/in, Kumpel', back: 'mate (infml)' },
+                    { front: 'tschüs; danke', back: 'cheers (infml)' },
+                    { front: 'Getreide-, Frühstücksflocken', back: 'cereal(s)' },
+                    { front: 'Auffanglager, Haftanstalt', back: 'detention centre' },
+                    { front: 'kritisieren', back: '(to) criticize' }
+                ]
+            },
+            "Seite 152": {
+                title: "Seite 152",
+                cards: [
+                    { front: 'ertrinken', back: '(to) drown' },
+                    { front: 'Konflikt, Auseinandersetzung', back: 'conflict' },
+                    { front: 'Ecke', back: 'corner' },
+                    { front: 'Politik, Richtlinie(n)', back: 'policy' },
+                    { front: 'was (auch) (immer)', back: 'whatever' },
+                    { front: 'illegal, verboten', back: 'illegal' },
+                    { front: 'für immer, ewig', back: 'forever' },
+                    { front: 'Schwierigkeit(en)', back: 'difficulty' },
+                    { front: 'Hütte', back: 'hut' },
+                    { front: '(ab)trocknen', back: '(to) dry' },
+                    { front: 'Experte, Expertin', back: 'expert' },
+                    { front: 'Operation, Einsatz', back: 'operation' },
+                    { front: 'etwas loswerden', back: '(to) get rid of sth.' },
+                    { front: 'Schulbuch, Lehrbuch', back: 'textbook' },
+                    { front: 'fotokopieren', back: '(to) photocopy' },
+                    { front: 'Tagespolitik, aktuelle Ereignisse', back: 'current affairs (pl)' },
+                    { front: 'Kurs(us)', back: 'course' }
+                ]
+            },
+            "Seite 153": {
+                title: "Seite 153",
+                cards: [
+                    { front: 'etwas erkennen', back: '(to) realize sth.' },
+                    { front: 'Ausschuss; Rat', back: 'council' },
+                    { front: 'falsch, unrichtig', back: 'false' },
+                    { front: 'langfristig', back: 'long-term' },
+                    { front: 'mittelfristig', back: 'medium-term' },
+                    { front: 'kurzfristig', back: 'short-term' },
+                    { front: 'empfehlen', back: '(to) recommend' },
+                    { front: 'Behörde', back: 'authority' },
+                    { front: 'eine Weile, einige Zeit', back: 'a while' },
+                    { front: 'etwas aufsaugen', back: '(to) soak sth. up' },
+                    { front: 'blinzeln', back: '(to) squint' },
+                    { front: 'Aktion, Kampagne', back: 'campaign' },
+                    { front: 'Oberbürgermeister/in', back: 'Lord Mayor' },
+                    { front: 'ein/e Freund/in von mir', back: 'a mate of mine' },
+                    { front: 'leugnen, bestreiten', back: '(to) deny' },
+                    { front: 'nicht beachten', back: '(to) ignore' },
+                    { front: 'Akzent', back: 'accent' },
+                    { front: 'Rätsel', back: 'riddle' },
+                    { front: 'direkt', back: 'direct' },
+                    { front: 'Ebene', back: 'plains (pl)' },
+                    { front: 'ertragen', back: '(to) bear' },
+                    { front: 'perfekt', back: 'perfect' },
+                    { front: 'ruhig', back: 'calm' },
+                    { front: 'Standpunkt, Meinung', back: 'point of view' }
+                ]
+            },
+            "Seite 154": {
+                title: "Seite 154",
+                cards: [
+                    { front: 'Turnier, Wettkampf', back: 'tournament' },
+                    { front: 'herzlichen Glückwunsch (zu etwas)', back: 'congratulations (on sth.)' },
+                    { front: 'trotzdem', back: 'anyway' },
+                    { front: 'Kollokation', back: 'collocation' },
+                    { front: 'Leichtathletik', back: 'athletics' },
+                    { front: 'Amateur/in', back: 'amateur' },
+                    { front: 'Veranstaltungsort, Veranstaltungsstätte', back: 'venue' },
+                    { front: 'Antonym, Gegenteil', back: 'antonym' },
+                    { front: 'Synonym', back: 'synonym' },
+                    { front: 'Redewendung', back: 'idiom' },
+                    { front: 'Du bist dran.', back: 'It’s your turn.' },
+                    { front: 'erklären', back: '(to) explain' },
+                    { front: 'Zuschauer/in', back: 'spectator' },
+                    { front: 'Torpfosten', back: 'goalpost' },
+                    { front: 'Mundschutz (Sport)', back: 'mouthguard (AE)' },
+                    { front: 'Kopfschutz (Sport)', back: 'headguard' },
+                    { front: 'treten; (Sport) schießen', back: '(to) kick' },
+                    { front: 'Faust', back: 'fist' }
+                ]
+            },
+            "Seite 155": {
+                title: "Seite 155",
+                cards: [
+                    { front: 'ertrinken', back: '(to) drown' },
+                    { front: 'Konflikt, Auseinandersetzung', back: 'conflict' },
+                    { front: 'Ecke', back: 'corner' },
+                    { front: 'Politik, Richtlinie(n)', back: 'policy' },
+                    { front: 'was (auch) (immer)', back: 'whatever' },
+                    { front: 'illegal, verboten', back: 'illegal' },
+                    { front: 'für immer, ewig', back: 'forever' },
+                    { front: 'Schwierigkeit(en)', back: 'difficulty' },
+                    { front: 'Hütte', back: 'hut' },
+                    { front: '(ab)trocknen', back: '(to) dry' },
+                    { front: 'Experte, Expertin', back: 'expert' },
+                    { front: 'Operation, Einsatz', back: 'operation' },
+                    { front: 'etwas loswerden', back: '(to) get rid of sth.' },
+                    { front: 'Schulbuch, Lehrbuch', back: 'textbook' },
+                    { front: 'fotokopieren', back: '(to) photocopy' },
+                    { front: 'Tagespolitik, aktuelle Ereignisse', back: 'current affairs (pl)' },
+                    { front: 'Kurs(us)', back: 'course' }
+                ]
+            }
+        };
+
+        // #######################################################
+        // 2. SPIELZUSTAND & DOM-ELEMENTE
+        // #######################################################
+        const MAX_ATTEMPTS = 3;
+        let currentCardIndex = 0;
+        let answered = false;
+        let failedAttempts = 0; 
+        let flashcards = []; 
+        let totalCards = 0;
+
+        const menuScreen = document.getElementById('menu-screen');
+        const gameContainer = document.getElementById('gameContainer');
+        const menuGrid = document.getElementById('menuGrid');
+        
+        const flashcardElement = document.getElementById('flashcard');
+        const cardFrontElement = document.getElementById('cardFront');
+        const cardBackElement = document.getElementById('cardBack');
+        const answerInputElement = document.getElementById('answerInput');
+        const checkButton = document.getElementById('checkButton');
+        const nextButton = document.getElementById('nextButton');
+        const attemptCountElement = document.getElementById('attemptCount'); 
+        const feedbackElement = document.getElementById('feedback');
+        const completionMessage = document.getElementById('completionMessage');
+        const progressTextElement = document.getElementById('progressText');
+        const gameTitle = document.getElementById('gameTitle');
+
+        // #######################################################
+        // 3. MENU FUNKTIONEN
+        // #######################################################
+        
+        /** Erzeugt die Auswahl-Buttons aus den Daten */
+        function renderMenu() {
+            menuGrid.innerHTML = ''; 
+            
+            const sortedKeys = Object.keys(allCardSets).sort((a, b) => {
+                return parseInt(a.replace('Seite ', '')) - parseInt(b.replace('Seite ', ''));
+            });
+
+            sortedKeys.forEach(key => {
+                const set = allCardSets[key];
+                const button = document.createElement('button');
+                button.classList.add('menu-button');
+                button.textContent = set.title;
+                button.onclick = () => loadGame(key);
+                menuGrid.appendChild(button);
+            });
+            
+            menuScreen.style.display = 'block';
+            gameContainer.style.display = 'none';
+        }
+        
+        /** Lädt das ausgewählte Spiel-Set */
+        function loadGame(setKey) {
+            const set = allCardSets[setKey];
+            
+            flashcards = set.cards;
+            totalCards = flashcards.length;
+            gameTitle.textContent = set.title;
+            
+            menuScreen.style.display = 'none';
+            gameContainer.style.display = 'block';
+            
+            currentCardIndex = 0;
+            shuffleArray(flashcards); 
+            startGame();
+        }
+
+        /** Geht vom Spiel zurück zur Menü-Auswahl */
+        function backToMenu() {
+            document.querySelector('.input-section').style.display = 'block';
+            document.querySelector('.card-container').style.display = 'block';
+            completionMessage.classList.remove('show');
+            renderMenu();
+        }
+
+        // #######################################################
+        // 4. SPIEL FUNKTIONEN (Kern-Logik mit Versuchszähler und Flicker-Fix)
+        // #######################################################
+
+        /** Lädt den Inhalt der aktuellen Karte und setzt die UI zurück */
+        function loadCardContent() {
+            const card = flashcards[currentCardIndex];
+            
+            // UI reset
+            answerInputElement.value = '';
+            answerInputElement.className = 'answer-input';
+            feedbackElement.textContent = '';
+            feedbackElement.className = 'feedback';
+            failedAttempts = 0; 
+            
+            // Set content
+            cardFrontElement.textContent = card.front;
+            cardBackElement.textContent = card.back;
+            
+            // Enable controls
+            checkButton.style.display = 'inline-block';
+            nextButton.style.display = 'none';
+            checkButton.disabled = false;
+            answerInputElement.disabled = false;
+            answered = false;
+
+            updateProgress();
+            updateAttemptCount();
+            flashcardElement.style.cursor = 'default'; 
+        }
+
+        function showCard() {
+            if (currentCardIndex >= totalCards) {
+                showCompletion();
+                return;
+            }
+
+            // NEUE LOGIK FÜR FLICKER-FIX
+            const isFlipped = flashcardElement.classList.contains('flipped');
+            flashcardElement.classList.remove('flipped'); // Startet die 0.6s Animation
+
+            if (isFlipped) {
+                // Wenn die Karte umgedreht war, warten wir 600ms, bis die Rotation beendet ist, bevor wir den neuen Inhalt laden
+                setTimeout(loadCardContent, 600);
+            } else {
+                // Wenn es die erste Karte ist oder die Karte nicht umgedreht war, sofort laden
+                loadCardContent();
+            }
+        }
+
+        function updateProgress() {
+            progressTextElement.textContent = `Karte: ${currentCardIndex + 1} / ${totalCards}`;
+        }
+        
+        function updateAttemptCount() {
+            const remaining = MAX_ATTEMPTS - failedAttempts;
+            // Holt die Error-Farbe aus dem CSS
+            const varColorError = getComputedStyle(document.documentElement).getPropertyValue('--color-error');
+            const varColorText = getComputedStyle(document.documentElement).getPropertyValue('--color-text');
+
+            if (remaining > 0) {
+                 attemptCountElement.textContent = `Versuche verbleibend: ${remaining}`;
+                 attemptCountElement.style.color = remaining === 1 ? varColorError : varColorText;
+            } else {
+                 attemptCountElement.textContent = '';
+            }
+        }
+
+        function flipCard() {
+            // Die Karte nur flippen, wenn die Antwort feststeht (nach checkAnswer)
+            if (answered) {
+                flashcardElement.classList.toggle('flipped');
+            }
+        }
+
+        /** 
+         * Entfernt unnötige Zeichen, Klammern etc., behält aber Groß-/Kleinschreibung bei!
+         */
+        function normalizeAnswer(text) {
+            // Ignoriert '(to)', Klammern und Endungen wie 'sth.', behält aber Casing bei
+            // WICHTIG: .toLowerCase() wurde entfernt, um Case-Sensitivity zu gewährleisten.
+            return text.replace(/$to$/g, '') 
+                       .replace(/[$$]/g, '')
+                       .replace(/sth\./g, '')
+                       .replace(/in\./g, '')
+                       .trim();
+        }
+
+        function checkAnswer() {
+            if (answered) return;
+
+            const card = flashcards[currentCardIndex];
+            const rawUserAnswer = answerInputElement.value.trim();
+            
+            // Die Prüfung ist jetzt case-sensitive
+            const userAnswer = normalizeAnswer(rawUserAnswer);
+            // Korrekte Antworten werden ebenfalls nur bereinigt (ohne .toLowerCase())
+            const correctAnswers = card.back.split('/').map(ans => normalizeAnswer(ans)); 
+            
+            const isCorrect = correctAnswers.some(ans => userAnswer === ans);
+            
+            if (isCorrect) {
+                // FALL 1: KORREKT
+                answered = true;
+                checkButton.disabled = true;
+                answerInputElement.classList.add('correct');
+                feedbackElement.textContent = '✓ Richtig! Gut gemacht!';
+                feedbackElement.classList.add('correct');
+                
+                // Karte flippen & weiter
+                flashcardElement.style.cursor = 'pointer'; 
+                setTimeout(flipCard, 500);
+                nextButton.style.display = 'inline-block';
+                answerInputElement.disabled = true;
+                attemptCountElement.textContent = '';
+                
+            } else {
+                // FALL 2: FALSCH
+                failedAttempts++;
+                
+                answerInputElement.classList.add('incorrect');
+                
+                if (failedAttempts >= MAX_ATTEMPTS) {
+                    // FALL 2a: Falsch und MAX_ATTEMPTS erreicht (Aufgeben)
+                    answered = true;
+                    checkButton.disabled = true;
+                    feedbackElement.textContent = `✗ Falsch. Maximale Versuche erreicht. Die korrekte Antwort war: "${card.back}"`;
+                    feedbackElement.classList.add('incorrect');
+                    
+                    // Karte flippen & weiter
+                    flashcardElement.style.cursor = 'pointer';
+                    setTimeout(flipCard, 500);
+                    nextButton.style.display = 'inline-block';
+                    answerInputElement.disabled = true;
+                    attemptCountElement.textContent = '';
+
+                } else {
+                    // FALL 2b: Falsch, aber weitere Versuche erlaubt
+                    setTimeout(() => {
+                        answerInputElement.classList.remove('incorrect');
+                        answerInputElement.value = ''; 
+                    }, 500);
+                    
+                    feedbackElement.textContent = `Falsch. Versuch ${failedAttempts} von ${MAX_ATTEMPTS} fehlgeschlagen. Achte auf die Groß-/Kleinschreibung!`;
+                    feedbackElement.classList.remove('correct');
+                    feedbackElement.classList.add('incorrect');
+                    
+                    updateAttemptCount();
+                }
+            }
+        }
+
+        function nextCard() {
+            currentCardIndex++;
+            showCard();
+        }
+
+        function showCompletion() {
+            document.querySelector('.input-section').style.display = 'none';
+            document.querySelector('.card-container').style.display = 'none';
+            progressTextElement.style.display = 'none';
+            attemptCountElement.style.display = 'none';
+            completionMessage.classList.add('show');
+        }
+
+        function restartGame() {
+            currentCardIndex = 0;
+            shuffleArray(flashcards); 
+            document.querySelector('.input-section').style.display = 'block';
+            document.querySelector('.card-container').style.display = 'block';
+            progressTextElement.style.display = 'block';
+            attemptCountElement.style.display = 'block';
+            completionMessage.classList.remove('show');
+            startGame();
+        }
+        
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+        
+        function startGame() {
+            showCard();
+            // Stellt sicher, dass die Klick-Logik nur bei "answered = true" funktioniert
+            flashcardElement.removeEventListener('click', flipCard);
+            flashcardElement.addEventListener('click', flipCard);
+            
+            // Fängt Enter-Taste ab
+            answerInputElement.removeEventListener('keypress', handleKeypress);
+            answerInputElement.addEventListener('keypress', handleKeypress);
+        }
+        
+        function handleKeypress(e) {
+             if (e.key === 'Enter' && !checkButton.disabled && !answerInputElement.disabled) {
+                checkAnswer();
+            }
+        }
+
+        // #######################################################
+        // 5. INITIALISIERUNG
+        // #######################################################
+        
+        window.onload = () => {
+             renderMenu();
+        }
+    </script>
+</body>
+</html>
