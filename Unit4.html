@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vokabel-Trainer: Unit 4</title>
+    
+    <!-- Google Font für handschriftliche Überschrift -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&display=swap" rel="stylesheet">
+
+    <style>
+        /* Dezentes Magenta-Styling */
+        :root {
+            --color-primary: #ec407a; /* Helles Magenta/Pink */
+            --color-secondary: #ad1457; /* Dunkles Weinrot */
+            --color-background: #fce4ec; /* Sehr helles Rosa */
+            --color-text: #263238; /* Dunkelgrau */
+            --color-success: #43a047; /* Grün für Korrekt */
+            --color-error: #e53935; /* Rot für Fehler */
+            --color-card-front: #ff80ab; /* Kartenfarbe Vorderseite */
+            --color-card-back: #e91e63; /* Kartenfarbe Rückseite */
+            --shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+        
+        body {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--color-background) 0%, var(--color-primary) 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .game-container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: var(--shadow);
+            max-width: 550px;
+            width: 95%;
+            text-align: center;
+            margin-top: 5vh;
+        }
+
+        /* HANDSCHRIFTLICHE ÜBERSCHRIFT */
+        .game-title, .menu-title {
+            font-family: 'Caveat', cursive;
+            font-size: 36px;
+            font-weight: 600;
+            color: var(--color-secondary);
+            margin-bottom: 20px;
+            text-align: center; 
+        }
+        
+        /* STARTBILDSCHIRM STYLING */
+        #menu-screen {
+            padding: 30px;
+            max-width: 600px;
+            width: 95%;
+            margin-top: 10vh;
+            background: white; 
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+        }
+
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+        }
+
+        .menu-button {
+            width: 100%;
+            background-color: var(--color-background);
+            color: var(--color-secondary);
+            border: 2px solid var(--color-primary);
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .menu-button:hover {
+            background-color: var(--color-primary);
+            color: white;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        /* Fortschritts- und Versuchsanzeige */
+        #progressText {
+            font-weight: 500;
+            color: var(--color-text);
+            margin-bottom: 5px;
+        }
+        
+        #attemptCount {
+            font-weight: bold;
+            color: var(--color-error);
+            margin-bottom: 15px;
+            min-height: 1.2em;
+        }
+
+        /* 3D-Karten-Container */
+        .card-container {
+            perspective: 1000px;
+            margin-bottom: 30px;
+        }
+
+        .flashcard {
+            width: 100%;
+            height: 220px;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            cursor: default; 
+        }
+
+        .flashcard.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 600;
+            text-align: center;
+            padding: 25px;
+            box-sizing: border-box;
+            color: white;
+            line-height: 1.4;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        /* Kartenfarben */
+        .card-front {
+            background: linear-gradient(135deg, var(--color-card-front), #f06292);
+        }
+
+        .card-back {
+            background: linear-gradient(135deg, var(--color-card-back), #c2185b);
+            transform: rotateY(180deg);
+        }
+        
+        /* Eingabe und Feedback */
+        .answer-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            text-align: center;
+            margin-bottom: 15px;
+            transition: border-color 0.3s;
+        }
+
+        .answer-input:focus {
+            outline: none;
+            border-color: var(--color-primary);
+        }
+
+        .answer-input.correct {
+            border-color: var(--color-success);
+            background-color: #f1f8e9;
+        }
+
+        .answer-input.incorrect {
+            border-color: var(--color-error);
+            background-color: #ffebee;
+        }
+
+        .feedback {
+            margin: 15px 0;
+            font-weight: 600;
+            min-height: 20px;
+        }
+
+        .feedback.correct { color: var(--color-success); }
+        .feedback.incorrect { color: var(--color-error); }
+
+        /* Buttons (Spiel) */
+        .button {
+            background-color: var(--color-primary);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin: 0 5px 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .button:hover:not(:disabled) {
+            background-color: var(--color-secondary);
+            transform: translateY(-2px);
+        }
+
+        .button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .button.next-button {
+            background-color: var(--color-success);
+        }
+        .button.next-button:hover:not(:disabled) {
+            background-color: #388e3c;
+        }
+
+        .button.back-button {
+            background-color: #9e9e9e; /* Grau */
+        }
+        .button.back-button:hover:not(:disabled) {
+            background-color: #757575;
+        }
+        
+        /* Abschlussmeldung */
+        .completion-message {
+            background: linear-gradient(45deg, #ff80ab, #e91e63); 
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            margin-top: 20px;
+            box-shadow: var(--shadow);
+            display: none;
+        }
+        
+        .completion-message.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    
+    <!-- STARTBILDSCHIRM (Wird zuerst angezeigt) -->
+    <section id="menu-screen">
+        <h1 class="menu-title">Unit 4: Vokabel-Trainer</h1>
+        <div class="menu-grid" id="menuGrid">
+            <!-- Buttons werden hier von JavaScript eingefügt -->
+        </div>
+    </section>
+
+    <!-- SPIEL-BEREICH (Ist standardmäßig versteckt) -->
+    <main class="game-container" id="gameContainer" style="display: none;">
+        <header>
+            <h1 class="game-title" id="gameTitle"></h1>
+        </header>
+        
+        <p id="attemptCount"></p>
+
+        <section class="card-container">
+            <div class="flashcard" id="flashcard">
+                <div class="card-face card-front" id="cardFront"></div>
+                <div class="card-face card-back" id="cardBack"></div>
+            </div>
+        </section>
+
+        <p id="progressText"></p>
+
+        <section class="input-section">
+            <input type="text" class="answer-input" id="answerInput" placeholder="Englische Antwort eingeben..." disabled>
+            <div class="feedback" id="feedback"></div>
+            
+            <button class="button" id="checkButton" onclick="checkAnswer()" disabled>Antwort prüfen</button>
+            <button class="button next-button" id="nextButton" onclick="nextCard()" style="display: none;">Nächste Karte</button>
+            <button class="button back-button" id="menuButton" onclick="backToMenu()">Zurück zum Menü</button>
+        </section>
+
+        <div class="completion-message" id="completionMessage">
+            <h3>Glückwunsch! 🎉</h3>
+            <p>Du hast alle Karten erfolgreich durchgearbeitet.</p>
+            <button class="button" onclick="restartGame()">Nochmal spielen</button>
+            <button class="button back-button" onclick="backToMenu()">Zurück zum Menü</button>
+        </div>
+    </main>
+
+    <script>
+        // #######################################################
+        // 1. LERNKARTEN-DATEN (Unit 4, aufgeteilt nach Seiten)
+        // #######################################################
+        const allCardSets = {
+            "page171": {
+                title: "Seite 171",
+                cards: [
+                    { front: 'Bild, Abbildung', back: 'image' },
+                    { front: 'Kontrast, Gegensatz. noun: contrast', back: 'contrast' },
+                    { front: 'Währung. Until 2001, the currency used in Germany was die Deutsche Mark.', back: 'currency' },
+                    { front: 'Hinduismus. The main religion in India is Hinduism.', back: 'Hinduism' },
+                    { front: 'Kuh', back: 'cow' },
+                    { front: 'Herrschaft. nouns: rule/ (person:) ruler', back: 'rule' }
+                ]
+            },
+            "page172": {
+                title: "Seite 172",
+                cards: [
+                    { front: 'Gleichberechtigung, Gleichheit.', back: 'equality' },
+                    { front: 'Region.', back: 'region' },
+                    { front: 'Mittelstand, Mittelschicht.', back: 'middle class' },
+                    { front: 'Fähigkeit, lesen und schreiben zu können.', back: 'literacy' },
+                    { front: 'Kaste, Gesellschaftsklasse', back: 'caste' },
+                    { front: 'Krieger/in', back: 'warrior' },
+                    { front: 'Arbeit; Arbeitskräfte.', back: 'labour' },
+                    { front: 'Diener/in; Bedienstete/r', back: 'servant' },
+                    { front: 'fegen, kehren', back: 'sweep' },
+                    { front: 'Abwasserkanal', back: 'sewer' },
+                    { front: 'Verfassung', back: 'constitution' },
+                    { front: 'Hochzeit, Ehe', back: 'marriage' },
+                    { front: 'Müll; Abfall; Fäkalien', back: 'waste' },
+                    { front: '(ver)meiden; verhindern', back: 'avoid' },
+                    { front: 'Quelle, Brunnen', back: 'well' }
+                ]
+            },
+            "page173": {
+                title: "Seite 173",
+                cards: [
+                    { front: 'Quote', back: 'quota' },
+                    { front: 'Gehalt', back: 'salary' },
+                    { front: 'Pharma-, pharmazeutisch', back: 'pharmaceutical' },
+                    { front: 'Biotechnologie', back: 'biotechnology' },
+                    { front: 'multinational', back: 'multinational' },
+                    { front: 'positive Diskriminierung', back: 'positive discrimination' },
+                    { front: 'unter, zwischen', back: 'among' },
+                    { front: 'Position, Standort; Stellung', back: 'position' },
+                    { front: 'fast, nahezu, beinahe', back: 'almost' },
+                    { front: 'Arbeitnehmer/in', back: 'employee' },
+                    { front: 'Mehrheit, Mehrzahl', back: 'majority' },
+                    { front: 'voran; voraus', back: 'ahead' },
+                    { front: 'Stand, Bude', back: 'stall' },
+                    { front: 'einfühlsam, sensibel', back: 'sensitive' },
+                    { front: 'religiös', back: 'religious' }
+                ]
+            },
+            "page174": {
+                title: "Seite 174",
+                cards: [
+                    { front: 'Gelegenheit, Möglichkeit', back: 'opportunity' },
+                    { front: 'Rate, Quote, Anteil; Tarif, Preis', back: 'rate' },
+                    { front: 'Mischung', back: 'blend' },
+                    { front: 'Rolle (Film, Theater)', back: 'role' },
+                    { front: 'romantisch', back: 'romantic' },
+                    { front: 'die Steuer', back: 'tax' },
+                    { front: 'wunderbar', back: 'wonderful' },
+                    { front: 'etwas (von jm.) machen lassen', back: 'have sth. done' },
+                    { front: 'massieren', back: 'massage' },
+                    { front: 'Nagel', back: 'nail' },
+                    { front: 'maniküren', back: 'manicure' },
+                    { front: 'ausliefern', back: 'deliver' }
+                ]
+            },
+            "page175": {
+                title: "Seite 175",
+                cards: [
+                    { front: 'Man sagt, es sei …', back: 'It is said to be …' },
+                    { front: 'Sünde', back: 'sin' },
+                    { front: 'Pilger/in', back: 'pilgrim' },
+                    { front: 'baden (in einem Fluss /dem Meer)', back: 'bathe' },
+                    { front: 'die Umwelt verschmutzen', back: 'pollute' },
+                    { front: 'Abwasser', back: 'sewage' },
+                    { front: 'einäschern', back: 'cremate' },
+                    { front: 'Ich auch.', back: 'So do I.' },
+                    { front: 'Ich auch nicht.', back: 'Neither do I.' },
+                    { front: 'Ich auch nicht.', back: '… – Nor do I.' },
+                    { front: 'übrigens', back: 'by the way' }
+                ]
+            },
+            "page176": {
+                title: "Seite 176",
+                cards: [
+                    { front: 'Dies gilt (auch) für …', back: 'This goes for … (too).' },
+                    { front: 'unterbrechen', back: 'interrupt' },
+                    { front: 'jn. zwingen, etwas zu tun', back: 'force sb. to do sth.' },
+                    { front: 'altmodisch', back: 'old-fashioned' },
+                    { front: 'mit jm. gehen, eine Beziehung haben', back: 'date sb.' },
+                    { front: 'etwas gemeinsam haben', back: 'have sth. in common' },
+                    { front: 'Horoskop', back: 'horoscope' },
+                    { front: 'zueinander passen', back: 'match' },
+                    { front: 'Persönlichkeit; Charakter', back: 'personality' },
+                    { front: 'Braut', back: 'bride' },
+                    { front: 'Bräutigam', back: 'groom' },
+                    { front: 'Scheidung', back: 'divorce' },
+                    { front: 'letztendlich, schließlich', back: 'eventually' },
+                    { front: 'möglicherweise', back: 'possibly' }
+                ]
+            },
+            "page177": {
+                title: "Seite 177",
+                cards: [
+                    { front: 'adoptieren; (Tier) bei sich aufnehmen', back: 'adopt' },
+                    { front: 'hart, rau; brutal', back: 'harsh' },
+                    { front: 'vernünftig, angemessen', back: 'reasonable' },
+                    { front: 'Eisenbahn', back: 'railway' },
+                    { front: 'an jm./etwas vorbeigehen, vorbeifahren', back: 'pass sb./sth.' },
+                    { front: 'heute Nacht, heute Abend', back: 'tonight' },
+                    { front: 'vielleicht', back: 'perhaps' },
+                    { front: 'fasziniert, begeistert', back: 'thrilled' },
+                    { front: 'mieten, leihen; (Person:) einstellen', back: 'hire' },
+                    { front: 'Stange, Balken', back: 'bar' },
+                    { front: 'ruhen; sich (auf)stützen; sich ausruhen', back: 'rest' },
+                    { front: 'holprig', back: 'bumpy' },
+                    { front: 'Busch', back: 'bush' }
+                ]
+            },
+            "page178": {
+                title: "Seite 178",
+                cards: [
+                    { front: 'als; wenn', back: 'by the time' },
+                    { front: 'müde; verschlafen', back: 'sleepy' },
+                    { front: 'erschöpft', back: 'exhausted' },
+                    { front: 'Bank (zum Sitzen)', back: 'bench' },
+                    { front: 'sofort', back: 'straightaway' },
+                    { front: 'Wagen', back: 'carriage' },
+                    { front: 'sich fragen', back: 'wonder' },
+                    { front: 'Treppe; (Treppen-)Stufen', back: 'stairs' },
+                    { front: 'Fall', back: 'case' },
+                    { front: 'Schaffner/in, Zugbegleiter/in', back: 'conductor' },
+                    { front: 'scheinen', back: 'shine' },
+                    { front: 'Panik', back: 'panic' },
+                    { front: 'fluchen', back: 'curse' },
+                    { front: 'etwas immer wieder / immer weiter tun', back: 'keep (on) doing sth.' },
+                    { front: 'golden, aus Gold', back: 'golden' },
+                    { front: 'Dreieck', back: 'triangle' },
+                    { front: 'Architektur', back: 'architecture' },
+                    { front: 'sagenhaft, fabelhaft', back: 'fabulous' }
+                ]
+            },
+            "page179": {
+                title: "Seite 179",
+                cards: [
+                    { front: 'Wahrzeichen', back: 'landmark' },
+                    { front: 'Palast, Schloss', back: 'palace' },
+                    { front: 'Sonnenaufgang', back: 'sunrise' },
+                    { front: 'beeindrucken', back: 'impress' },
+                    { front: 'Dekoration, Schmuck, Verzierung', back: 'decoration' },
+                    { front: 'neutral', back: 'neutral' },
+                    { front: 'verlässlich, zuverlässig', back: 'reliable' },
+                    { front: 'Plantage; Anpflanzung', back: 'plantation' },
+                    { front: 'Produktion', back: 'production' },
+                    { front: 'Enzyklopädie, Lexikon', back: 'encyclopedia' },
+                    { front: 'Artikel, Gegenstand, Punkt', back: 'item' },
+                    { front: 'ärztlich, medizinisch', back: 'medical' },
+                    { front: 'anständig, ordentlich', back: 'decent' },
+                    { front: 'Lohn', back: 'wage' },
+                    { front: 'Nutzen, Vorteil', back: 'benefit' },
+                    { front: 'Koffein', back: 'caffeine' },
+                    { front: 'Krebs (Erkrankung)', back: 'cancer' },
+                    { front: 'angeben, behaupten', back: 'claim' },
+                    { front: 'Kräuter-', back: 'herbal' }
+                ]
+            },
+            "page180": {
+                title: "Seite 180",
+                cards: [
+                    { front: 'Minze', back: 'mint' },
+                    { front: 'deutlich, spürbar, erheblich', back: 'significant' },
+                    { front: 'Untersuchung, Studie', back: 'study' },
+                    { front: 'aktuell, jüngst', back: 'recent' },
+                    { front: 'Streik', back: 'strike' },
+                    { front: 'erbärmlich, jämmerlich, trostlos', back: 'miserable' }
+                ]
+            }
+        };
+
+        // #######################################################
+        // 2. SPIELZUSTAND & DOM-ELEMENTE
+        // #######################################################
+        const MAX_ATTEMPTS = 3;
+        let currentCardIndex = 0;
+        let answered = false;
+        let failedAttempts = 0; 
+        let flashcards = []; 
+        let totalCards = 0;
+
+        const menuScreen = document.getElementById('menu-screen');
+        const gameContainer = document.getElementById('gameContainer');
+        const menuGrid = document.getElementById('menuGrid');
+        
+        const flashcardElement = document.getElementById('flashcard');
+        const cardFrontElement = document.getElementById('cardFront');
+        const cardBackElement = document.getElementById('cardBack');
+        const answerInputElement = document.getElementById('answerInput');
+        const checkButton = document.getElementById('checkButton');
+        const nextButton = document.getElementById('nextButton');
+        const attemptCountElement = document.getElementById('attemptCount'); 
+        const feedbackElement = document.getElementById('feedback');
+        const completionMessage = document.getElementById('completionMessage');
+        const progressTextElement = document.getElementById('progressText');
+        const gameTitle = document.getElementById('gameTitle');
+
+        // #######################################################
+        // 3. MENU FUNKTIONEN
+        // #######################################################
+        
+        /** Erzeugt die Auswahl-Buttons aus den Daten */
+        function renderMenu() {
+            menuGrid.innerHTML = ''; 
+            
+            // Sortiert die Keys (page171, page172, ...) numerisch
+            const sortedKeys = Object.keys(allCardSets).sort((a, b) => {
+                return parseInt(a.replace('page', '')) - parseInt(b.replace('page', ''));
+            });
+
+            sortedKeys.forEach(key => {
+                const set = allCardSets[key];
+                const button = document.createElement('button');
+                button.classList.add('menu-button');
+                button.textContent = set.title;
+                button.onclick = () => loadGame(key);
+                menuGrid.appendChild(button);
+            });
+            
+            menuScreen.style.display = 'block';
+            gameContainer.style.display = 'none';
+        }
+        
+        /** Lädt das ausgewählte Spiel-Set */
+        function loadGame(setKey) {
+            const set = allCardSets[setKey];
+            
+            flashcards = set.cards;
+            totalCards = flashcards.length;
+            gameTitle.textContent = set.title;
+            
+            menuScreen.style.display = 'none';
+            gameContainer.style.display = 'block';
+            
+            currentCardIndex = 0;
+            shuffleArray(flashcards); 
+            startGame();
+        }
+
+        /** Geht vom Spiel zurück zur Menü-Auswahl */
+        function backToMenu() {
+            document.querySelector('.input-section').style.display = 'block';
+            document.querySelector('.card-container').style.display = 'block';
+            completionMessage.classList.remove('show');
+            renderMenu();
+        }
+
+        // #######################################################
+        // 4. SPIEL FUNKTIONEN (Kern-Logik mit Versuchszähler)
+        // #######################################################
+        
+        /** Lädt den Inhalt der aktuellen Karte und setzt die UI zurück */
+        function loadCardContent() {
+            const card = flashcards[currentCardIndex];
+            
+            // UI reset
+            answerInputElement.value = '';
+            answerInputElement.className = 'answer-input';
+            feedbackElement.textContent = '';
+            feedbackElement.className = 'feedback';
+            failedAttempts = 0; 
+            
+            // Set content
+            cardFrontElement.textContent = card.front;
+            cardBackElement.textContent = card.back;
+            
+            // Enable controls
+            checkButton.style.display = 'inline-block';
+            nextButton.style.display = 'none';
+            checkButton.disabled = false;
+            answerInputElement.disabled = false;
+            answered = false;
+
+            updateProgress();
+            updateAttemptCount();
+            flashcardElement.style.cursor = 'default'; 
+        }
+
+        function showCard() {
+            if (currentCardIndex >= totalCards) {
+                showCompletion();
+                return;
+            }
+
+            // NEUE LOGIK FÜR FLICKER-FIX
+            const isFlipped = flashcardElement.classList.contains('flipped');
+            flashcardElement.classList.remove('flipped'); // Startet die 0.6s Animation
+
+            if (isFlipped) {
+                // Wenn die Karte umgedreht war, warten wir 600ms, bis die Rotation beendet ist, bevor wir den neuen Inhalt laden
+                setTimeout(loadCardContent, 600);
+            } else {
+                // Wenn es die erste Karte ist oder die Karte nicht umgedreht war, sofort laden
+                loadCardContent();
+            }
+        }
+
+        function updateProgress() {
+            progressTextElement.textContent = `Karte: ${currentCardIndex + 1} / ${totalCards}`;
+        }
+        
+        function updateAttemptCount() {
+            const remaining = MAX_ATTEMPTS - failedAttempts;
+            const varColorError = getComputedStyle(document.documentElement).getPropertyValue('--color-error');
+            const varColorText = getComputedStyle(document.documentElement).getPropertyValue('--color-text');
+
+            if (remaining > 0) {
+                 attemptCountElement.textContent = `Versuche verbleibend: ${remaining}`;
+                 attemptCountElement.style.color = remaining === 1 ? varColorError : varColorText;
+            } else {
+                 attemptCountElement.textContent = '';
+            }
+        }
+
+        function flipCard() {
+            // Die Karte nur flippen, wenn die Antwort feststeht (nach checkAnswer)
+            if (answered) {
+                flashcardElement.classList.toggle('flipped');
+            }
+        }
+
+        /** 
+         * Entfernt unnötige Zeichen, Klammern etc., behält aber Groß-/Kleinschreibung bei!
+         */
+        function normalizeAnswer(text) {
+            // Ignoriert '(to)', Klammern und Endungen wie 'sth.', behält aber Casing bei
+            return text.replace(/$to$/g, '') 
+                       .replace(/[$$]/g, '')
+                       .replace(/sth\./g, '')
+                       .replace(/in\./g, '')
+                       .trim();
+        }
+
+        function checkAnswer() {
+            if (answered) return;
+
+            const card = flashcards[currentCardIndex];
+            const rawUserAnswer = answerInputElement.value.trim();
+            
+            // Die Prüfung ist jetzt case-sensitive
+            const userAnswer = normalizeAnswer(rawUserAnswer);
+            // Korrekte Antworten werden ebenfalls nur bereinigt (ohne .toLowerCase())
+            const correctAnswers = [card.back]; // Nur die Antwort ohne Lautschrift
+            
+            const isCorrect = correctAnswers.some(ans => userAnswer === ans);
+            
+            if (isCorrect) {
+                // FALL 1: KORREKT
+                answered = true;
+                checkButton.disabled = true;
+                answerInputElement.classList.add('correct');
+                feedbackElement.textContent = '✓ Richtig! Gut gemacht!';
+                feedbackElement.classList.add('correct');
+                
+                // Karte flippen & weiter
+                flashcardElement.style.cursor = 'pointer'; 
+                setTimeout(flipCard, 500);
+                nextButton.style.display = 'inline-block';
+                answerInputElement.disabled = true;
+                attemptCountElement.textContent = '';
+                
+            } else {
+                // FALL 2: FALSCH
+                failedAttempts++;
+                
+                answerInputElement.classList.add('incorrect');
+                
+                if (failedAttempts >= MAX_ATTEMPTS) {
+                    // FALL 2a: Falsch und MAX_ATTEMPTS erreicht (Aufgeben)
+                    answered = true;
+                    checkButton.disabled = true;
+                    feedbackElement.textContent = `✗ Falsch. Maximale Versuche erreicht. Die korrekte Antwort war: "${card.back}"`;
+                    feedbackElement.classList.add('incorrect');
+                    
+                    // Karte flippen & weiter
+                    flashcardElement.style.cursor = 'pointer';
+                    setTimeout(flipCard, 500);
+                    nextButton.style.display = 'inline-block';
+                    answerInputElement.disabled = true;
+                    attemptCountElement.textContent = '';
+
+                } else {
+                    // FALL 2b: Falsch, aber weitere Versuche erlaubt
+                    setTimeout(() => {
+                        answerInputElement.classList.remove('incorrect');
+                        answerInputElement.value = ''; 
+                    }, 500);
+                    
+                    feedbackElement.textContent = `Falsch. Versuch ${failedAttempts} von ${MAX_ATTEMPTS} fehlgeschlagen. Achte auf die Groß-/Kleinschreibung!`;
+                    feedbackElement.classList.remove('correct');
+                    feedbackElement.classList.add('incorrect');
+                    
+                    updateAttemptCount();
+                }
+            }
+        }
+
+        function nextCard() {
+            currentCardIndex++;
+            showCard();
+        }
+
+        function showCompletion() {
+            document.querySelector('.input-section').style.display = 'none';
+            document.querySelector('.card-container').style.display = 'none';
+            progressTextElement.style.display = 'none';
+            attemptCountElement.style.display = 'none';
+            completionMessage.classList.add('show');
+        }
+
+        function restartGame() {
+            currentCardIndex = 0;
+            shuffleArray(flashcards); 
+            document.querySelector('.input-section').style.display = 'block';
+            document.querySelector('.card-container').style.display = 'block';
+            progressTextElement.style.display = 'block';
+            attemptCountElement.style.display = 'block';
+            completionMessage.classList.remove('show');
+            startGame();
+        }
+        
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+        
+        function startGame() {
+            showCard();
+            // Stellt sicher, dass die Klick-Logik nur bei "answered = true" funktioniert
+            flashcardElement.removeEventListener('click', flipCard);
+            flashcardElement.addEventListener('click', flipCard);
+            
+            // Fängt Enter-Taste ab
+            answerInputElement.removeEventListener('keypress', handleKeypress);
+            answerInputElement.addEventListener('keypress', handleKeypress);
+        }
+        
+        function handleKeypress(e) {
+             if (e.key === 'Enter' && !checkButton.disabled && !answerInputElement.disabled) {
+                checkAnswer();
+            }
+        }
+
+        // #######################################################
+        // 5. INITIALISIERUNG
+        // #######################################################
+        
+        window.onload = () => {
+             renderMenu();
+        }
+    </script>
+</body>
+</html>
